@@ -11,7 +11,7 @@ from config import RunMode, LossFunction, exception, ConfigException
 class NetworkUtils(object):
     """
     网络组合块 - 细节实现
-    说明: 本类中所有的BN实现都采用: tf.layers.batch_normalization
+    说明: 本类中所有的BN实现都采用: tf.compat.v1.layers.batch_normalization
     为什么不用 【tf.keras.layers.BatchNormalization/tf.layers.BatchNormalization]
     前者: `tf.control_dependencies(tf.GraphKeys.UPDATE_OPS)`
     should not be used (consult the `tf.keras.layers.batch_normalization` documentation).

@@ -25,7 +25,7 @@ class MobileNetV2(object):
             padding='same',
             kernel_initializer='he_normal',
             name='conv1')(inputs)
-        x = tf.layers.batch_normalization(
+        x = tf.compat.v1.layers.batch_normalization(
             x,
             reuse=False,
             momentum=0.9,
@@ -42,7 +42,7 @@ class MobileNetV2(object):
             kernel_size=1,
             use_bias=False,
             name='Conv_1')(inputs)
-        x = tf.layers.batch_normalization(
+        x = tf.compat.v1.layers.batch_normalization(
             x,
             reuse=False,
             momentum=0.9,

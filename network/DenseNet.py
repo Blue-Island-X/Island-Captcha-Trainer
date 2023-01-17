@@ -27,7 +27,7 @@ class DenseNet(object):
         with tf.keras.backend.name_scope('DenseNet'):
 
             x = tf.keras.layers.Conv2D(64, 3, strides=2, use_bias=False, name='conv1/conv', padding='same')(self.inputs)
-            x = tf.layers.batch_normalization(
+            x = tf.compat.v1.layers.batch_normalization(
                 x,
                 epsilon=1.001e-5,
                 axis=3,
@@ -46,7 +46,7 @@ class DenseNet(object):
             x = self.utils.dense_block(x, self.blocks[2], name='conv4')
             x = self.utils.transition_block(x, 0.5, name='pool4')
             x = self.utils.dense_block(x, self.blocks[3], name='conv5')
-            x = tf.layers.batch_normalization(
+            x = tf.compat.v1.layers.batch_normalization(
                 x,
                 epsilon=1.001e-5,
                 axis=3,
