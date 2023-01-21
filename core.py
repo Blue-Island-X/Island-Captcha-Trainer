@@ -120,7 +120,7 @@ class NeuralNetwork(object):
 
         logits = self.recurrent_network_builder.build() if self.recurrent_network_builder else x
         if self.recurrent_network_builder and self.model_conf.loss_func != LossFunction.CTC:
-            raise ValueError('CTC loss must use recurrent neural network.')
+            raise ValueError('Recurrent neural network must use CTC loss.')
 
         """输出层，根据Loss函数区分"""
         with tf.keras.backend.name_scope('output'):
