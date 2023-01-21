@@ -4,13 +4,13 @@ System:
   MemoryUsage: {MemoryUsage}
   Version: 2
 
-# CNNNetwork: [CNN5, ResNet, DenseNet]
-# RecurrentNetwork: [CuDNNBiLSTM, CuDNNLSTM, CuDNNGRU, BiLSTM, LSTM, GRU, BiGRU, NoRecurrent]
+# CNNNetwork: [CNN3, CNN5, CCNX, ResNetTiny, ResNet50, DenseNet, MobileNetV2]
+# RecurrentNetwork: [NoRecurrent, GRU, BiGRU, GRUcuDNN, LSTM, BiLSTM, LSTMcuDNN, BiLSTMcuDNN]
 # - The recommended configuration is CNN5+GRU
 # UnitsNum: [16, 64, 128, 256, 512]
 # - This parameter indicates the number of nodes used to remember and store past states.
 # Optimizer: Loss function algorithm for calculating gradient.
-# - [AdaBound, Adam, Momentum]
+# - [RAdam, Adam, Momentum, AdaBound, SGD, AdaGrad, RMSProp]
 # OutputLayer: [LossFunction, Decoder]
 # - LossFunction: [CTC, CrossEntropy]
 # - Decoder: [CTC, CrossEntropy]
