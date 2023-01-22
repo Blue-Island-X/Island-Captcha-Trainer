@@ -85,7 +85,6 @@ def from_graphdef(sess, graph_def, model_path, input_names, output_names):
 
 
 def convert_onnx(sess, graph_def, input_path, inputs_op, outputs_op):
-
     graphdef = input_path
 
     if inputs_op:
@@ -100,7 +99,7 @@ def convert_onnx(sess, graph_def, input_path, inputs_op, outputs_op):
     graph_def, inputs_op, outputs_op = from_graphdef(sess, graph_def, graphdef, inputs_op, outputs_op)
     model_path = graphdef
 
-    graph_def = tf_optimize(inputs_op, outputs_op, graph_def, True)
+    graph_def = tf_optimize(inputs_op, outputs_op, graph_def)
 
     with tf.Graph().as_default() as tf_graph:
         tf.compat.v1.import_graph_def(graph_def, name='')

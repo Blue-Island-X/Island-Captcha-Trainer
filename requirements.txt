@@ -1,10 +1,11 @@
-pillow
-opencv-python-headless
-numpy
-pyyaml>=3.13
 tqdm
-colorama
-pyinstaller
 astor
+numpy
+pillow
+pyyaml
+tf2onnx
+colorama
 fonttools
+pyinstaller
 tensorflow-gpu
+opencv-python-headless

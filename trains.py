@@ -14,6 +14,7 @@ import utils
 import utils.data
 import validation
 from config import *
+from tf_onnx_util2 import convert_onnx
 from tf_graph_util import convert_variables_to_constants
 from PIL import ImageFile
 
@@ -33,11 +34,20 @@ class Trains:
         self.model_conf = model_conf
         self.validation = validation.Validation(self.model_conf)
 
-    def compile_tflite(self, input_path):
-        input_tensor = ['input']
-        output_tensor = ['dense_decoded']
+    def compile_onnx(self, predict_sess, output_graph_def, input_path):
+        if self.model_conf.loss_func == LossFunction.CrossEntropy:
+            convert_onnx(sess=predict_sess, graph_def=output_graph_def, input_path=input_path, inputs_op='input:0', outputs_op='dense_decoded:0')
+        elif self.model_conf.loss_func == LossFunction.CTC:
+            convert_onnx(sess=predict_sess, graph_def=output_graph_def, input_path=input_path, inputs_op='input:0', outputs_op='output/predict:0')
 
-        converter = tf.compat.v1.lite.TFLiteConverter.from_frozen_graph(input_path, input_tensor, output_tensor)
+    def compile_tflite(self, input_path):
+        if self.model_conf.loss_func == LossFunction.CrossEntropy:
+            converter = tf.compat.v1.lite.TFLiteConverter.from_frozen_graph(graph_def_file=input_path, input_arrays=['input'], output_arrays=['dense_decoded'])
+        elif self.model_conf.loss_func == LossFunction.CTC:
+            converter = tf.compat.v1.lite.TFLiteConverter.from_frozen_graph(graph_def_file=input_path, input_arrays=['input'], output_arrays=['output/predict'])
+        else:
+            return
+
         tflite_model = converter.convert()
         output_path = input_path.replace('.pb', '.tflite')
 
@@ -76,7 +86,11 @@ class Trains:
         with tf.io.gfile.GFile(last_compile_model_path, mode='wb') as gf:
             gf.write(output_graph_def.SerializeToString())
 
-        self.compile_tflite(last_compile_model_path)
+        if self.model_conf.neu_recurrent not in [RecurrentNetwork.BiGRU, RecurrentNetwork.BiLSTM, RecurrentNetwork.BiLSTMcuDNN]:
+            self.compile_onnx(predict_sess, output_graph_def, last_compile_model_path)
+
+        if self.model_conf.neu_recurrent == RecurrentNetwork.NoRecurrent:
+            self.compile_tflite(last_compile_model_path)
 
     def achieve_cond(self, acc, cost, epoch):
         achieve_accuracy = acc >= self.model_conf.trains_end_acc
@@ -88,7 +102,6 @@ class Trains:
         return False
 
     def init_captcha_gennerator(self, ran_captcha):
-
         path = self.model_conf.da_random_captcha['FontPath']
         if not os.path.exists(path):
             exception("Font path does not exist.", code=-6754)
@@ -187,12 +200,10 @@ class Trains:
 
         # 进入训练任务循环
         while 1:
-
             start_time = time.time()
             batch_cost = 65535
             # 批次循环
             for cur_batch in range(num_batches_per_epoch):
-
                 if self.stop_flag:
                     break
 
@@ -231,7 +242,6 @@ class Trains:
 
                 # 进入验证集验证环节
                 if step % trains_validation_steps == 0 and step != 0:
-
                     batch_time = time.time()
                     validation_batch = validation_feeder.generate_batch_by_tfrecords(sess)
 
