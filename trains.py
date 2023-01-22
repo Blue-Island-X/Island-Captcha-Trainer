@@ -7,10 +7,8 @@ tf.compat.v1.disable_eager_execution()
 try:
     gpus = tf.config.list_physical_devices('GPU')
     tf.config.experimental.set_memory_growth(gpus[0], True)
-
 except Exception as e:
     print(e, "No available gpu found.")
-# from tensorflow.python.platform.build_info import build_info
 import core
 import utils
 import utils.data
@@ -18,7 +16,6 @@ import validation
 from config import *
 from tf_graph_util import convert_variables_to_constants
 from PIL import ImageFile
-# if build_info['cuda_version'] == '64_110':
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.INFO)
@@ -36,6 +33,17 @@ class Trains:
         self.model_conf = model_conf
         self.validation = validation.Validation(self.model_conf)
 
+    def compile_tflite(self, input_path):
+        input_tensor = ['input']
+        output_tensor = ['dense_decoded']
+
+        converter = tf.compat.v1.lite.TFLiteConverter.from_frozen_graph(input_path, input_tensor, output_tensor)
+        tflite_model = converter.convert()
+        output_path = input_path.replace('.pb', '.tflite')
+
+        with open(output_path, 'wb') as f:
+            f.write(tflite_model)
+
     def compile_graph(self, acc):
         """
         编译当前准确率下对应的计算图为pb模型，准确率仅作为模型命名的一部分
@@ -49,12 +57,7 @@ class Trains:
         tf.compat.v1.keras.backend.set_session(predict_sess)
 
         with predict_sess.graph.as_default():
-            model = core.NeuralNetwork(
-                model_conf=self.model_conf,
-                mode=RunMode.Predict,
-                backbone=self.model_conf.neu_cnn,
-                recurrent=self.model_conf.neu_recurrent
-            )
+            model = core.NeuralNetwork(model_conf=self.model_conf, mode=RunMode.Predict, backbone=self.model_conf.neu_cnn, recurrent=self.model_conf.neu_recurrent)
             model.build_graph()
             model.build_train_op()
             input_graph_def = predict_sess.graph.as_graph_def()
@@ -62,22 +65,18 @@ class Trains:
             tf.compat.v1.logging.info(tf.train.latest_checkpoint(self.model_conf.model_root_path))
             saver.restore(predict_sess, tf.train.latest_checkpoint(self.model_conf.model_root_path))
 
-            output_graph_def = convert_variables_to_constants(
-                predict_sess,
-                input_graph_def,
-                output_node_names=['dense_decoded']
-            )
+            output_graph_def = convert_variables_to_constants(predict_sess, input_graph_def, output_node_names=['dense_decoded'])
 
         if not os.path.exists(self.model_conf.compile_model_path):
             os.makedirs(self.model_conf.compile_model_path)
 
-        last_compile_model_path = (
-            os.path.join(self.model_conf.compile_model_path, "{}.pb".format(self.model_conf.model_name))
-        ).replace('.pb', '_{}.pb'.format(int(acc * 10000)))
+        last_compile_model_path = (os.path.join(self.model_conf.compile_model_path, "{}.pb".format(self.model_conf.model_name))).replace('.pb', '_{}.pb'.format(int(acc * 10000)))
 
         self.model_conf.output_config(target_model_name="{}_{}".format(self.model_conf.model_name, int(acc * 10000)))
         with tf.io.gfile.GFile(last_compile_model_path, mode='wb') as gf:
             gf.write(output_graph_def.SerializeToString())
+
+        self.compile_tflite(last_compile_model_path)
 
     def achieve_cond(self, acc, cost, epoch):
         achieve_accuracy = acc >= self.model_conf.trains_end_acc
